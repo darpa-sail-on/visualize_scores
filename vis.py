@@ -68,13 +68,14 @@ def program_metrics(js):
     is_early = js['m_is_cdt_and_is_early']['Is Early']
     if is_cdt and not is_early:
         gt_ind = int(m_num_stats['GT_indx'])
-        m1_dict = {}
+        p_ind = int(m_num_stats['P_indx_0.5'])
+        '''m1_dict = {}
         for k,v in m_num_stats.items():
             if k == 'GT_indx':
                 continue
             threshold = float(k.split('_')[-1])
-            m1_dict[threshold] = v - gt_ind
-        metric_agg['m1'] = m1_dict
+            m1_dict[threshold] = v - gt_ind'''
+        metric_agg['m1'] = {'Threshold 0.5' : p_ind - gt_ind}
     return metric_agg
 
 def process_metric(metric_name, metric_dict):
@@ -153,7 +154,7 @@ def data_to_df(all_results):
 
 def plot_data(metric_name, data, output_fpath):
     plt.figure(figsize=(20,10))
-    if metric_name in ['m_nrp','m_acc']:
+    if metric_name in ['m_nrp','m_acc', 'm1']:
         #sns_plot = sns.boxplot(x="index", y="value", 
         #    data=melted_data, label = label)
         sns.catplot(x='x',y='y',row='novelty', data=data, orient='v', kind='box', hue='alg')
