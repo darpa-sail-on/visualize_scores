@@ -30,6 +30,7 @@ def load_in_results(filepath):
             d = process_metric(metric_name, metric_dict)
             if d is not None:
                 metrics.update(d)
+        metrics.update(program_metrics(js))
 
         for metric, metric_val in metrics.items():
             if metric not in results:
@@ -58,6 +59,23 @@ def load_in_results(filepath):
     for k,v in results.items():
         df_results[k] = pd.DataFrame(v)
     return df_results'''
+
+def program_metrics(js):
+    metric_agg = {}
+    # calculate M1
+    m_num_stats = js['m_num_stats']
+    is_cdt = js['m_is_cdt_and_is_early']['Is CDT']
+    is_early = js['m_is_cdt_and_is_early']['Is Early']
+    if is_cdt and not is_early:
+        gt_ind = int(m_num_stats['GT_indx'])
+        m1_dict = {}
+        for k,v in m_num_stats.items():
+            if k == 'GT_indx':
+                continue
+            threshold = float(k.split('_')[-1])
+            m1_dict[threshold] = v - gt_ind
+        metric_agg['m1'] = m1_dict
+    return metric_agg
 
 def process_metric(metric_name, metric_dict):
     if metric_name == 'm_num':
