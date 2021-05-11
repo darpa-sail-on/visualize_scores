@@ -33,17 +33,25 @@ def load_in_results(filepath):
         metrics.update(program_metrics(js))
 
         for metric, metric_val in metrics.items():
-            if metric not in results:
-                results[metric] = pd.DataFrame(columns=['x','y','alg','novelty'])
-            for k,v in metric_val.items():
-                results[metric].loc[len(results[metric])] = [
-                    k,float(v), alg, novelty
-                ]
-            '''if alg not in results[metric]:
-                results[metric][alg] = {}
-            if novelty not in results[metric][alg]:
-                results[metric][alg][novelty] = []
-            results[metric][alg][novelty].append(metric_val)'''
+            if isinstance(metric_val, dict):
+                if metric not in results:
+                    results[metric] = pd.DataFrame(columns=['x','y','alg','novelty'])
+                for k,v in metric_val.items():
+                    results[metric].loc[len(results[metric])] = [
+                        k,float(v), alg, novelty
+                    ]
+            elif isinstance(metric_val, int):
+                if metric not in results:
+                    results[metric] = {}
+                if alg not in results[metric]:
+                    results[metric][alg] = {}
+                if novelty not in results[metric][alg]:
+                    results[metric][alg][novelty] = 0
+                results[metric][alg][novelty] += metric_val
+            else:
+                raise ValueError('Unknown metric type')
+    for metric_name in ['m_is_early']:
+        results[metric_name] = pd.DataFrame(results[metric_name])
     return results
     '''# check novelties
     novelties = None
@@ -96,7 +104,8 @@ def process_metric(metric_name, metric_dict):
                 metric_agg[key_name][score] = v
         return metric_agg
     elif metric_name in ['m_is_cdt_and_is_early']:
-        return None # TODO: revisit this
+        is_early = 1 if metric_dict['Is Early'] else 0
+        return {'m_is_early' : is_early}
     elif 'm_acc_round' in metric_name:
         return None
     elif metric_name == 'm_acc':
@@ -158,6 +167,12 @@ def plot_data(metric_name, data, output_fpath):
         #sns_plot = sns.boxplot(x="index", y="value", 
         #    data=melted_data, label = label)
         sns.catplot(x='x',y='y',row='novelty', data=data, orient='v', kind='box', hue='alg')
+    elif metric_name == 'm_is_early':
+        data = data.reset_index().rename(columns={'index':'Novelty'})
+        melted_data = pd.melt(data, id_vars = ['Novelty'],
+            var_name = 'alg', value_name = 'count')
+        sns_plot=sns.barplot(x="Novelty", y="count", 
+            data=melted_data, hue = 'alg')
     else:
         sns_plot = sns.lineplot(x='x',y='y',data=data, hue='alg',style='novelty')
         sns_plot.set_xlabel('Threshold')
